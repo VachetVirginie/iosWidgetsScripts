@@ -57,6 +57,16 @@ module.exports = {
           ]
         }
       ],
+      '/script/': [
+        {
+          title: 'Comment ça marche',
+          collapsable: false,
+          children: [
+            '',
+            'corona',
+          ]
+        }
+      ],
     }
   },
 
