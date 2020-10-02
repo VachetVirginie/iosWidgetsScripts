@@ -1,0 +1,19 @@
+{
+  "name": "iosWidgetsScripts",
+  "version": "0.0.1",
+  "description": "scriptable ressources",
+  "main": "index.js",
+  "authors": {
+    "name": "vivvi",
+    "email": "vachetvirginie@gmail.com"
+  },
+  "repository": "https://github.com/VachetVirginie/iosWidgetsScripts/iosWidgetsScripts",
+  "scripts": {
+    "dev": "vuepress dev src",
+    "build": "vuepress build src"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "vuepress": "^1.5.3"
+  }
+}
