@@ -7,7 +7,7 @@
     "name": "vivvi",
     "email": "vachetvirginie@gmail.com"
   },
-  "repository": "https://github.com/VachetVirginie/iosWidgetsScripts/iosWidgetsScripts",
+  "repository": "https://github.com/VachetVirginie/iosWidgetsScripts",
   "scripts": {
     "dev": "vuepress dev src",
     "build": "vuepress build src"
