@@ -668,3 +668,462 @@ async function isUsingDarkAppearance() {
 }
 
 ````
+## Frankenstein widget
+
+READ THE INSTRUCTIONS BELOW
+You need to both edit the code and add parameters in order to personalise the widget.
+To add parameters, add the widget to your home, long press it and tap 'edit widget'
+Your parameter must have the following format: image.png|padding-top|text-color|
+The image should be placed in the iCloud Scriptable folder (case-sensitive).
+The padding-top spacing parameter moves the text down by a set amount.
+The text color parameter should be a hex value.
+For example, to use the image bkg_fall.PNG with a padding of 20 and a text color of red
+the parameter should be typed as: bkg_fall.png|20|#ff0000(rouge) #384b77(bleu) #FFFFFF(blanc) #0000ff(bleu style phantom)
+All parameters are required and separated with "|"
+Parameters allow different settings for multiple widget instances.
+
+````
+// Variables used by Scriptable.
+// These must be at the very top of the file. Do not edit.
+// icon-color: blue; icon-glyph: calendar-alt;
+
+// CREDITS
+// Greetings code Autumn Vibes by u/ben5292001
+// Battery code by u/_Bisho_
+// Weather stack code by u/coderjones
+// Countdown code and assemble by u/flasozzi
+
+// READ THE INSTRUCTIONS BELOW
+// You need to both edit the code and add parameters in order to personalise the widget.
+
+// To add parameters, add the widget to your home, long press it and tap 'edit widget'
+// Your parameter must have the following format: image.png|padding-top|text-color|
+// The image should be placed in the iCloud Scriptable folder (case-sensitive).
+// The padding-top spacing parameter moves the text down by a set amount.
+// The text color parameter should be a hex value.
+// For example, to use the image bkg_fall.PNG with a padding of 20 and a text color of red
+// the parameter should be typed as: bkg_fall.png|20|#ff0000
+// All parameters are required and separated with "|"
+// Parameters allow different settings for multiple widget instances.
+
+// You also need to edit the info below with your own info.
+// You can grab your weather API and city ID from openweathermap.org (free account needed).
+
+var yourAPI = "40b532eb499b6315640892e324f7efce";
+var cityID = "2996943";
+var userName = "Emma";
+var countdownTo = "December 25 2020";
+var countdownTitle = "Noeeel";
+
+
+// Now this is where the fun begins and you don't really need to do anything else from this point on.
+
+
+let widgetHello = new ListWidget(); 
+var today = new Date();
+
+var widgetInputRAW = args.widgetParameter;
+
+try {
+	widgetInputRAW.toString();
+} catch(e) {
+	throw new Error("Please long press the widget and add a parameter.");
+}
+
+var widgetInput = widgetInputRAW.toString();
+
+var inputArr = widgetInput.split("|");
+
+var spacing = parseInt(inputArr[1]);
+
+// iCloud file path
+var scriptableFilePath = "/var/mobile/Library/Mobile Documents/iCloud~dk~simonbs~Scriptable/Documents/";
+var removeSpaces1 = inputArr[0].split(" "); // Remove spaces from file name
+var removeSpaces2 = removeSpaces1.join('');
+var tempPath = removeSpaces2.split(".");
+var backgroundImageURLRAW = scriptableFilePath + tempPath[0];
+
+var fm = FileManager.iCloud();
+var backgroundImageURL = scriptableFilePath + tempPath[0] + ".";
+var backgroundImageURLInput = scriptableFilePath + removeSpaces2;
+
+// For users having trouble with extensions
+// Uses user-input file path is the file is found
+// Checks for common file format extensions if the file is not found
+if (fm.fileExists(backgroundImageURLInput) == false) {
+		var fileTypes = ['png', 'jpg', 'jpeg', 'tiff', 'webp', 'gif'];
+
+		fileTypes.forEach(function(item) {
+			if (fm.fileExists((backgroundImageURL + item.toLowerCase())) == true) {
+				backgroundImageURL = backgroundImageURLRAW + "." + item.toLowerCase();
+			} else if (fm.fileExists((backgroundImageURL + item.toUpperCase())) == true) {
+				backgroundImageURL = backgroundImageURLRAW + "." + item.toUpperCase();
+			}
+		});
+} else {
+	backgroundImageURL = scriptableFilePath + removeSpaces2;
+}
+
+var spacing = parseInt(inputArr[1]);
+
+//API_KEY
+let API_WEATHER = yourAPI;
+let CITY_WEATHER = cityID;
+
+//Get storage
+var base_path = "/var/mobile/Library/Mobile Documents/iCloud~dk~simonbs~Scriptable/Documents/weather/";
+var fm = FileManager.iCloud();
+
+// Fetch Image from Url
+async function fetchimageurl(url) {
+	const request = new Request(url)
+	var res = await request.loadImage();
+	return res;
+}
+
+// Get formatted Date
+function getformatteddate(){
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return months[today.getMonth()] + " " + today.getDate()
+}
+
+// Long-form days and months
+var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// Load image from local drive
+async function fetchimagelocal(path){
+  var finalPath = base_path + path + ".png";
+  if(fm.fileExists(finalPath)==true){
+	console.log("file exists: " + finalPath);
+	return finalPath;
+  }else{
+	//throw new Error("Error file not found: " + path);
+	if(fm.fileExists(base_path)==false){
+	  console.log("Directry not exist creating one.");
+	  fm.createDirectory(base_path);
+	}
+	console.log("Downloading file: " + finalPath);
+	await downloadimg(path);
+	if(fm.fileExists(finalPath)==true){
+	  console.log("file exists after download: " + finalPath);
+	  return finalPath;
+	}else{
+	  throw new Error("Error file not found: " + path);
+	}
+  }
+}
+
+async function downloadimg(path){
+	const url = "http://a.animedlweb.ga/weather/weathers25_2.json";
+	const data = await fetchWeatherData(url);
+	var dataimg = null;
+	var name = null;
+	if(path.includes("bg")){
+	  dataimg = data.background;
+	  name = path.replace("_bg","");
+	}else{
+	  dataimg = data.icon;
+	  name = path.replace("_ico","");
+	}
+	var imgurl=null;
+	switch (name){
+	  case "01d":
+		imgurl = dataimg._01d;
+	  break;
+	  case "01n":
+		imgurl = dataimg._01n;
+	  break;
+	  case "02d":
+		imgurl = dataimg._02d;
+	  break;
+	  case "02n":
+		imgurl = dataimg._02n;
+	  break;
+	  case "03d":
+		imgurl = dataimg._03d;
+	  break;
+	  case "03n":
+		imgurl = dataimg._03n;
+	  break;
+	  case "04d":
+		imgurl = dataimg._04d;
+	  break;
+	  case "04n":
+		imgurl = dataimg._04n;
+	  break;
+	  case "09d":
+		imgurl = dataimg._09d;
+	  break;
+	  case "09n":
+		imgurl = dataimg._09n;
+	  break;
+	  case "10d":
+		imgurl = dataimg._10d;
+	  break;
+	  case "10n":
+		imgurl = dataimg._10n;
+	  break;
+	  case "11d":
+		imgurl = dataimg._11d;
+	  break;
+	  case "11n":
+		imgurl = dataimg._11n;
+	  break;
+	  case "13d":
+		imgurl = dataimg._13d;
+	  break;
+	  case "13n":
+		imgurl = dataimg._13n;
+	  break;
+	  case "50d":
+		imgurl = dataimg._50d;
+	  break;
+	  case "50n":
+		imgurl = dataimg._50n;
+	  break;
+	}
+	const image = await fetchimageurl(imgurl);
+	console.log("Downloaded Image");
+	fm.writeImage(base_path+path+".png",image);
+}
+
+//get Json weather
+async function fetchWeatherData(url) {
+  const request = new Request(url);
+  const res = await request.loadJSON();
+  return res;
+}
+
+// Get Location 
+/*Location.setAccuracyToBest();
+let curLocation = await Location.current();
+console.log(curLocation.latitude);
+console.log(curLocation.longitude);*/
+let wetherurl = "http://api.openweathermap.org/data/2.5/weather?id=" + CITY_WEATHER + "&APPID=" + API_WEATHER + "&units=metric";
+//"http://api.openweathermap.org/data/2.5/weather?lat=" + curLocation.latitude + "&lon=" + curLocation.longitude + "&appid=" + API_WEATHER + "&units=metric";
+//"http://api.openweathermap.org/data/2.5/weather?id=" + CITY_WEATHER + "&APPID=" + API_WEATHER + "&units=metric"
+
+const weatherJSON = await fetchWeatherData(wetherurl);
+const cityName = weatherJSON.name;
+const weatherarry = weatherJSON.weather;
+const iconData = weatherarry[0].icon;
+const weathername = weatherarry[0].main;
+const curTempObj = weatherJSON.main;
+const curTemp = curTempObj.temp;
+const highTemp = curTempObj.temp_max;
+const lowTemp = curTempObj.temp_min;
+const feel_like = curTempObj.feels_like;
+//Completed loading weather data
+
+// Greetings arrays per time period. 
+var greetingsMorning = [
+'Good morning, ' + userName + '.'
+];
+var greetingsAfternoon = [
+'Good afternoon, ' + userName + '.'
+];
+var greetingsEvening = [
+'Good evening, ' + userName + '.'
+];
+var greetingsNight = [
+'Good night, ' + userName + '.'
+];
+var greetingsLateNight = [
+'Go to sleep, ' + userName + '.'
+];
+
+// Holiday customization
+var holidaysByKey = {
+	// month,week,day: datetext
+	"11,4,4": "Happy Thanksgiving!"
+}
+
+var holidaysByDate = {
+	// month,date: greeting
+	"1,1": "Happy " + (today.getFullYear()).toString() + "!",
+	"10,31": "Happy Halloween!",
+	"12,25": "Merry Christmas!"
+}
+
+var holidayKey = (today.getMonth() + 1).toString() + "," +  (Math.ceil(today.getDate() / 7)).toString() + "," + (today.getDay()).toString();
+
+var holidayKeyDate = (today.getMonth() + 1).toString() + "," + (today.getDate()).toString();
+
+// Date Calculations
+var weekday = days[ today.getDay() ];
+var month = months[ today.getMonth() ];
+var date = today.getDate();
+var hour = today.getHours();
+
+// Append ordinal suffix to date
+function ordinalSuffix(input) {
+	if (input % 10 == 1 && date != 11) {
+		return input.toString() + "st";
+	} else if (input % 10 == 2 && date != 12) {
+		return input.toString() + "nd";
+	} else if (input % 10 == 3 && date != 13) {
+		return input.toString() + "rd";
+	} else {
+		return input.toString() + "th";
+	}
+}
+
+// Generate date string
+var datefull = weekday + ", " + month + " " + ordinalSuffix(date);
+
+// Support for multiple greetings per time period
+function randomGreeting(greetingArray) {
+	return Math.floor(Math.random() * greetingArray.length);
+}
+
+var greeting = new String("Howdy.")
+if (hour < 5 && hour >= 1) { // 1am - 5am
+	greeting = greetingsLateNight[randomGreeting(greetingsLateNight)];
+} else if (hour >= 23 || hour < 1) { // 11pm - 1am
+	greeting = greetingsNight[randomGreeting(greetingsNight)];
+} else if (hour < 12) { // Before noon (5am - 12pm)
+	greeting = greetingsMorning[randomGreeting(greetingsMorning)];
+} else if (hour >= 12 && hour <= 17) { // 12pm - 5pm
+	greeting = greetingsAfternoon[randomGreeting(greetingsAfternoon)];
+} else if (hour > 17 && hour < 23) { // 5pm - 11pm
+	greeting = greetingsEvening[randomGreeting(greetingsEvening)];
+} 
+
+// Overwrite greeting if calculated holiday
+if (holidaysByKey[holidayKey]) {
+	greeting = holidaysByKey[holidayKey];
+}
+
+// Overwrite all greetings if specific holiday
+if (holidaysByDate[holidayKeyDate]) {
+	greeting = holidaysByDate[holidayKeyDate];
+}
+
+// Try/catch for color input parameter
+try {
+	inputArr[2].toString();
+} catch(e) {
+	throw new Error("Please long press the widget and add a parameter.");
+}
+
+let themeColor = new Color(inputArr[2].toString());
+
+/* --------------- */
+/* Assemble Widget */
+/* --------------- */
+ 
+//Top spacing
+widgetHello.addSpacer(parseInt(spacing));
+ 
+                                                                       
+let shadow = new Color('#A9A9A9')
+                                                                       
+// Greeting label
+let hello = widgetHello.addText(greeting);
+hello.font = Font.boldSystemFont(29);
+hello.textColor = themeColor;
+hello.shadowColor = shadow;
+hello.shadowOffset = new Point(1,1);
+hello.shadowRadius = 2;
+hello.textOpacity = (1);
+                                                                       
+hello.centerAlignText();
+ 
+widgetHello.addSpacer(10);
+ 
+let hStack = widgetHello.addStack();
+hStack.layoutHorizontally();
+
+// Centers weather line
+hStack.addSpacer(45);
+ 
+// Date label in stack
+let datetext = hStack.addText(datefull + '\xa0\xa0\xa0\xa0');
+datetext.font = Font.boldSystemFont(18);
+datetext.textColor = themeColor;
+datetext.shadowColor = shadow;
+datetext.shadowOffset = new Point(1,1);
+datetext.shadowRadius = 1;
+datetext.textOpacity = (0.9);
+datetext.centerAlignText();
+ 
+//image
+var tempImg = Image.fromFile(await fetchimagelocal(iconData + "_ico"));
+ 
+//image in stack
+let widgetimg = hStack.addImage(tempImg);
+widgetimg.imageSize = new Size(20, 20);
+widgetimg.shadowColor = shadow;
+widgetimg.shadowOffset = new Point(1,1);
+widgetimg.shadowRadius = 1;
+widgetimg.imageOpacity = (0.9);
+widgetimg.centerAlignImage();
+ 
+//tempeture label in stack
+let temptext = hStack.addText('\xa0\xa0'+ Math.round(curTemp).toString()+"\u2103");
+temptext.font = Font.boldSystemFont(18);
+temptext.textColor = themeColor;
+temptext.shadowColor = shadow;
+temptext.shadowOffset = new Point(1,1);
+temptext.shadowRadius = 1;
+temptext.textOpacity = (0.9);
+temptext.centerAlignText();
+
+
+// Countdown
+const endtime = countdownTo;
+function getTimeRemaining(endtime){
+const total = Date.parse(endtime) - Date.parse(new Date());
+const seconds = Math.floor( (total/1000) % 60 );
+const minutes = Math.floor( (total/1000/60) % 60 );
+const hours = Math.floor( (total/(1000*60*60)) % 24 );
+const days = Math.floor( total/(1000*60*60*24) );
+
+return {
+total,
+days,
+hours,
+minutes,
+seconds
+};
+}
+
+const total = Date.parse(endtime) - Date.parse(new Date());
+let progressText = widgetHello.addText(String(getTimeRemaining(endtime).days + 1) + ' days until ' + countdownTitle)
+progressText.font = Font.boldSystemFont(18);
+progressText.textColor = themeColor;
+progressText.shadowColor = shadow;
+progressText.shadowOffset = new Point(1,1);
+progressText.shadowRadius = 1;
+progressText.textOpacity = (0.9);
+progressText.centerAlignText();
+ 
+//Battery
+const batteryLine = widgetHello.addText(renderBattery());
+batteryLine.textColor = themeColor;
+batteryLine.font = Font.boldSystemFont(18);
+batteryLine.shadowColor = shadow;
+batteryLine.shadowOffset = new Point(1,1);
+batteryLine.shadowRadius = 1;
+batteryLine.shadowOpacity = (0.7);
+batteryLine.textOpacity = (0.9);
+
+function renderBattery() {
+const batteryLevel = Device.batteryLevel();
+const batteryAscii = "⚡️" + Math.round(batteryLevel * 100) + "%";
+return batteryAscii;
+}
+                        
+batteryLine.centerAlignText();
+
+ 
+// Bottom Spacer
+widgetHello.addSpacer();
+widgetHello.setPadding(0, 0, 0, 0);
+ 
+// Background image
+widgetHello.backgroundImage = Image.fromFile(backgroundImageURL);
+                        
+// Set widget
+Script.setWidget(widgetHello);
